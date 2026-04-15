@@ -1,16 +1,31 @@
 """FastAPI application entry point — NaVRatM Beneficiary Intelligence."""
 
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.routes import applications, documents, health, voice
 from app.config import CORS_ORIGINS
-from app.api.routes import health, applications, documents, voice
+from app.models.database import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup / shutdown lifecycle."""
+    await init_db()
+    yield
+
 
 app = FastAPI(
     title="NaVRatM — Beneficiary Intelligence & Fraud Detection",
-    description="AI-powered fraud detection assistant for Indian welfare schemes, powered by Sarvam AI",
+    description="AI-powered fraud detection for Indian welfare schemes, powered by Sarvam AI",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS

@@ -1,6 +1,7 @@
 """PII masking — regex-based, applied at extraction time."""
 
 from __future__ import annotations
+
 import re
 
 
@@ -45,12 +46,12 @@ def mask_phone(value: str | None) -> str | None:
 
 
 def mask_fields(fields: dict) -> dict:
-    """Apply masking to a dict of extracted fields. Returns a new dict."""
+    """Apply masking to a dict of extracted fields.  Returns a new dict."""
     masked = dict(fields)
-    masked["aadhaar_number"] = mask_aadhaar(masked.get("aadhaar_number"))
-    masked["pan_number"] = mask_pan(masked.get("pan_number"))
-    masked["bank_account"] = mask_bank_account(masked.get("bank_account"))
-    masked["phone"] = mask_phone(masked.get("phone"))
+    masked["aadhaar_masked"] = mask_aadhaar(masked.pop("aadhaar_number", None) or masked.get("aadhaar_masked"))
+    masked["pan_masked"] = mask_pan(masked.pop("pan_number", None) or masked.get("pan_masked"))
+    masked["bank_account_masked"] = mask_bank_account(masked.pop("bank_account", None) or masked.get("bank_account_masked"))
+    masked["phone_masked"] = mask_phone(masked.pop("phone", None) or masked.get("phone_masked"))
     return masked
 
 
@@ -61,5 +62,9 @@ def mask_text(text: str) -> str:
     # Phone: 10 consecutive digits
     text = re.sub(r"\b(\d{6})(\d{4})\b", r"XXXXXX\2", text)
     # Bank account: long digit strings
-    text = re.sub(r"\b(\d{6,}?)(\d{4})\b", lambda m: "X" * len(m.group(1)) + m.group(2), text)
+    text = re.sub(
+        r"\b(\d{6,}?)(\d{4})\b",
+        lambda m: "X" * len(m.group(1)) + m.group(2),
+        text,
+    )
     return text
