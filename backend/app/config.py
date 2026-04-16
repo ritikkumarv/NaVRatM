@@ -20,6 +20,10 @@ SARVAM_STT_TRANSLATE_MODEL: str = "saaras:v2.5"  # STT-translate → English
 SARVAM_TTS_MODEL: str = "bulbul:v3"             # TTS (37 voices)
 SARVAM_TRANSLATE_MODEL: str = "mayura:v1"        # text translate (11 langs)
 
+# ── SSL ──
+# Set SARVAM_SSL_VERIFY=false in .env if corporate proxy breaks certificate verification
+SSL_VERIFY: bool = os.getenv("SARVAM_SSL_VERIFY", "true").lower() not in ("false", "0", "no")
+
 # ── Database ──
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./navratm.db")
 

@@ -8,6 +8,7 @@ import logging
 
 from app.connectors import boot_connectors, registry
 from app.core.cross_verifier import cross_verify
+from app.core.anomaly_detector import detect_anomalies
 from app.core.risk_scorer import calculate_risk
 from app.models.schemas import (
     CanonicalRiskProfile,
@@ -61,6 +62,7 @@ async def process_application(
     app_id: str,
     declared: DeclaredValues,
     extracted_docs: list[tuple[str, ExtractedFields]],
+    all_apps_store: dict[str, dict] | None = None,
 ) -> CanonicalRiskProfile:
     """Run the full fraud-detection pipeline.
 
@@ -68,8 +70,9 @@ async def process_application(
         1. Derive entity_id from declared values.
         2. Fetch all enrichment connectors in parallel.
         3. Cross-verify declared vs extracted vs connector data.
-        4. Calculate risk score with factor breakdown.
-        5. Return CanonicalRiskProfile.
+        4. Run anomaly detection across all fraud patterns.
+        5. Calculate risk score with factor breakdown + anomaly scores.
+        6. Return CanonicalRiskProfile.
     """
     entity_id = _derive_entity_id(declared)
     log.info("Pipeline started for app=%s entity=%s", app_id, entity_id)
@@ -84,11 +87,29 @@ async def process_application(
         len(discrepancies), app_id,
     )
 
-    # Step 4 — risk scoring
+    # Step 4 — anomaly detection (needs all_apps_store for cross-app patterns)
+    anomalies = []
+    network_flags = []
+    if all_apps_store is not None:
+        anomalies, network_flags = await detect_anomalies(
+            app_id,
+            declared.model_dump(),
+            extracted_docs,
+            connector_results,
+            all_apps_store,
+        )
+        log.info(
+            "Anomaly detection complete: %d anomalies, %d network flags for app=%s",
+            len(anomalies), len(network_flags), app_id,
+        )
+
+    # Step 5 — risk scoring (now includes anomaly + network scores)
     profile = calculate_risk(
         discrepancies,
         connector_results=connector_results,
         num_documents=len(extracted_docs),
+        anomalies=anomalies,
+        network_flags_input=network_flags,
     )
 
     # Stamp the entity ID onto the profile

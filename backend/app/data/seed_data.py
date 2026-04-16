@@ -1,4 +1,4 @@
-"""Synthetic seed data — 20 demo applications with known fraud patterns."""
+"""Synthetic seed data — 52 demo applications with known fraud patterns."""
 
 SEED_APPLICATIONS = [
     # ── Clean applications (low risk) ──
@@ -512,4 +512,286 @@ SEED_APPLICATIONS = [
         ],
         "expected_risk": "critical", "expected_score": 88, "fraud_label": True,
     },
+    # ═══════════════════════════════════════════════════════════════════
+    # Sprint 4 — expanded fraud-pattern coverage (APP-021 → APP-052)
+    # ═══════════════════════════════════════════════════════════════════
+
+    # ── Ghost Beneficiaries (minimal/empty documents) ──
+    {
+        "id": "APP-021",
+        "declared": {"full_name": "Phantom Singh", "dob": "1991-05-05", "gender": "male", "address": "Unknown Address, Block X, Gorakhpur, UP 273001", "aadhaar_masked": "XXXX-XXXX-0001", "pan_masked": "", "income_monthly": 4000.0, "bank_account_masked": "", "phone_masked": "", "scheme": "PM-KISAN", "state": "Uttar Pradesh", "district": "Gorakhpur"},
+        "documents": [],
+        "expected_risk": "high", "expected_score": 55, "fraud_label": True, "fraud_type": "ghost",
+    },
+    {
+        "id": "APP-022",
+        "declared": {"full_name": "Blank Doc Rani", "dob": "1985-08-12", "gender": "female", "address": "Village Kuch Nahi, Sitapur, UP 261001", "aadhaar_masked": "XXXX-XXXX-0002", "pan_masked": "", "income_monthly": 3500.0, "bank_account_masked": "", "phone_masked": "", "scheme": "Ujjwala Yojana", "state": "Uttar Pradesh", "district": "Sitapur"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {}}],
+        "expected_risk": "high", "expected_score": 50, "fraud_label": True, "fraud_type": "ghost",
+    },
+    {
+        "id": "APP-023",
+        "declared": {"full_name": "No Proof Kumar", "dob": "1992-03-22", "gender": "male", "address": "NA, Deoria, UP 274001", "aadhaar_masked": "XXXX-XXXX-0003", "pan_masked": "", "income_monthly": 5000.0, "bank_account_masked": "", "phone_masked": "", "scheme": "MGNREGS", "state": "Uttar Pradesh", "district": "Deoria"},
+        "documents": [],
+        "expected_risk": "high", "expected_score": 55, "fraud_label": True, "fraud_type": "ghost",
+    },
+    {
+        "id": "APP-024",
+        "declared": {"full_name": "Empty Docs Devi", "dob": "1978-11-30", "gender": "female", "address": "Ghost Lane 1, Ambedkar Nagar, UP 224001", "aadhaar_masked": "XXXX-XXXX-0004", "pan_masked": "", "income_monthly": 2800.0, "bank_account_masked": "", "phone_masked": "", "scheme": "PM-KISAN", "state": "Uttar Pradesh", "district": "Ambedkar Nagar"},
+        "documents": [{"type": "income_certificate", "source": "Income Certificate", "extracted": {}}],
+        "expected_risk": "high", "expected_score": 52, "fraud_label": True, "fraud_type": "ghost",
+    },
+    {
+        "id": "APP-025",
+        "declared": {"full_name": "Invisible Prasad", "dob": "1995-01-15", "gender": "male", "address": "Plot 0, Nowhere, Ballia, UP 277001", "aadhaar_masked": "XXXX-XXXX-0005", "pan_masked": "", "income_monthly": 4500.0, "bank_account_masked": "", "phone_masked": "", "scheme": "Ujjwala Yojana", "state": "Uttar Pradesh", "district": "Ballia"},
+        "documents": [],
+        "expected_risk": "high", "expected_score": 55, "fraud_label": True, "fraud_type": "ghost",
+    },
+
+    # ── Duplicate Identity Ring (shared phone, bank, address) ──
+    {
+        "id": "APP-026",
+        "declared": {"full_name": "Raju Sharma", "dob": "1988-02-14", "gender": "male", "address": "12 Ring Road, Sector 15, Noida, UP 201301", "aadhaar_masked": "XXXX-XXXX-5551", "pan_masked": "", "income_monthly": 6000.0, "bank_account_masked": "XXXXXXXXXX5555", "phone_masked": "XXXXXX5555", "scheme": "PM-KISAN", "state": "Uttar Pradesh", "district": "Gautam Buddha Nagar"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Raju Sharma", "dob": "1988-02-14", "gender": "male", "address": "12 Ring Road Noida", "aadhaar_masked": "XXXX-XXXX-5551"}}],
+        "expected_risk": "high", "expected_score": 60, "fraud_label": True, "fraud_type": "duplicate_ring",
+    },
+    {
+        "id": "APP-027",
+        "declared": {"full_name": "Pappu Verma", "dob": "1990-06-20", "gender": "male", "address": "12 Ring Road, Sector 15, Noida, UP 201301", "aadhaar_masked": "XXXX-XXXX-5552", "pan_masked": "", "income_monthly": 5800.0, "bank_account_masked": "XXXXXXXXXX5555", "phone_masked": "XXXXXX5555", "scheme": "MGNREGS", "state": "Uttar Pradesh", "district": "Gautam Buddha Nagar"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Pappu Verma", "dob": "1990-06-20", "gender": "male", "address": "12 Ring Road Noida", "aadhaar_masked": "XXXX-XXXX-5552"}}],
+        "expected_risk": "high", "expected_score": 58, "fraud_label": True, "fraud_type": "duplicate_ring",
+    },
+    {
+        "id": "APP-028",
+        "declared": {"full_name": "Munna Bhai", "dob": "1987-09-10", "gender": "male", "address": "12 Ring Road, Sector 15, Noida, UP 201301", "aadhaar_masked": "XXXX-XXXX-5553", "pan_masked": "", "income_monthly": 6200.0, "bank_account_masked": "XXXXXXXXXX5555", "phone_masked": "XXXXXX5555", "scheme": "PM-KISAN", "state": "Uttar Pradesh", "district": "Gautam Buddha Nagar"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Munna Bhai", "dob": "1987-09-10", "gender": "male", "address": "12 Ring Road Sector 15 Noida"}}],
+        "expected_risk": "high", "expected_score": 60, "fraud_label": True, "fraud_type": "duplicate_ring",
+    },
+    {
+        "id": "APP-029",
+        "declared": {"full_name": "Chhotu Lal", "dob": "1992-12-01", "gender": "male", "address": "12 Ring Road, Sector 15, Noida, UP 201301", "aadhaar_masked": "XXXX-XXXX-5554", "pan_masked": "", "income_monthly": 5500.0, "bank_account_masked": "XXXXXXXXXX5555", "phone_masked": "XXXXXX5555", "scheme": "Ujjwala Yojana", "state": "Uttar Pradesh", "district": "Gautam Buddha Nagar"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Chhotu Lal", "dob": "1992-12-01", "gender": "male", "address": "12 Ring Road Noida"}}],
+        "expected_risk": "high", "expected_score": 58, "fraud_label": True, "fraud_type": "duplicate_ring",
+    },
+    {
+        "id": "APP-030",
+        "declared": {"full_name": "Billu Yadav", "dob": "1989-04-18", "gender": "male", "address": "12 Ring Road, Sector 15, Noida, UP 201301", "aadhaar_masked": "XXXX-XXXX-5555", "pan_masked": "", "income_monthly": 5900.0, "bank_account_masked": "XXXXXXXXXX5555", "phone_masked": "XXXXXX5555", "scheme": "MGNREGS", "state": "Uttar Pradesh", "district": "Gautam Buddha Nagar"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Billu Yadav", "dob": "1989-04-18", "gender": "male", "address": "12 Ring Rd Noida"}}],
+        "expected_risk": "high", "expected_score": 60, "fraud_label": True, "fraud_type": "duplicate_ring",
+    },
+
+    # ── Income Inflation (massive declared-vs-extracted income gap) ──
+    {
+        "id": "APP-031",
+        "declared": {"full_name": "Suresh Inflated Rao", "dob": "1983-07-12", "gender": "male", "address": "5 MG Road, Bangalore, Karnataka 560001", "aadhaar_masked": "XXXX-XXXX-3101", "pan_masked": "XXXXX3101X", "income_monthly": 6000.0, "bank_account_masked": "XXXXXXXXXX3101", "phone_masked": "XXXXXX3101", "scheme": "PM-KISAN", "state": "Karnataka", "district": "Bangalore Urban"},
+        "documents": [
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Suresh Rao", "income_monthly": 55000.0}},
+            {"type": "bank_statement", "source": "Bank Statement", "extracted": {"full_name": "Suresh I Rao", "income_monthly": 62000.0, "bank_account_masked": "XXXXXXXXXX3101"}},
+        ],
+        "expected_risk": "critical", "expected_score": 82, "fraud_label": True, "fraud_type": "income_inflation",
+    },
+    {
+        "id": "APP-032",
+        "declared": {"full_name": "Geeta Mishra", "dob": "1979-11-25", "gender": "female", "address": "88 Civil Lines, Nagpur, Maharashtra 440001", "aadhaar_masked": "XXXX-XXXX-3201", "pan_masked": "", "income_monthly": 5500.0, "bank_account_masked": "XXXXXXXXXX3201", "phone_masked": "XXXXXX3201", "scheme": "Ujjwala Yojana", "state": "Maharashtra", "district": "Nagpur"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Geeta R Mishra", "dob": "1979-11-25", "gender": "female"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Geeta Mishra", "income_monthly": 48000.0}},
+        ],
+        "expected_risk": "critical", "expected_score": 80, "fraud_label": True, "fraud_type": "income_inflation",
+    },
+    {
+        "id": "APP-033",
+        "declared": {"full_name": "Kiran Bala", "dob": "1986-04-10", "gender": "female", "address": "22 Dalal Street, Mumbai, Maharashtra 400001", "aadhaar_masked": "XXXX-XXXX-3301", "pan_masked": "", "income_monthly": 7000.0, "bank_account_masked": "XXXXXXXXXX3301", "phone_masked": "XXXXXX3301", "scheme": "MGNREGS", "state": "Maharashtra", "district": "Mumbai"},
+        "documents": [
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Kiran Bala", "income_monthly": 58000.0}},
+            {"type": "bank_statement", "source": "Bank Statement", "extracted": {"full_name": "K. Bala", "income_monthly": 64000.0}},
+        ],
+        "expected_risk": "critical", "expected_score": 85, "fraud_label": True, "fraud_type": "income_inflation",
+    },
+    {
+        "id": "APP-034",
+        "declared": {"full_name": "Harish Pandey", "dob": "1975-08-20", "gender": "male", "address": "33 Gomti Nagar, Lucknow, UP 226010", "aadhaar_masked": "XXXX-XXXX-3401", "pan_masked": "", "income_monthly": 4800.0, "bank_account_masked": "XXXXXXXXXX3401", "phone_masked": "XXXXXX3401", "scheme": "PM-KISAN", "state": "Uttar Pradesh", "district": "Lucknow"},
+        "documents": [
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Harish Pandey", "income_monthly": 42000.0}},
+            {"type": "bank_statement", "source": "Bank Statement", "extracted": {"full_name": "H Pandey", "income_monthly": 47000.0, "bank_account_masked": "XXXXXXXXXX3401"}},
+        ],
+        "expected_risk": "critical", "expected_score": 82, "fraud_label": True, "fraud_type": "income_inflation",
+    },
+    {
+        "id": "APP-035",
+        "declared": {"full_name": "Nirmala Soni", "dob": "1990-01-15", "gender": "female", "address": "11 Law Garden, Ahmedabad, Gujarat 380015", "aadhaar_masked": "XXXX-XXXX-3501", "pan_masked": "", "income_monthly": 5200.0, "bank_account_masked": "XXXXXXXXXX3501", "phone_masked": "XXXXXX3501", "scheme": "Ujjwala Yojana", "state": "Gujarat", "district": "Ahmedabad"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Nirmala K Soni", "dob": "1990-01-15", "gender": "female"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Nirmala Soni", "income_monthly": 51000.0}},
+        ],
+        "expected_risk": "critical", "expected_score": 80, "fraud_label": True, "fraud_type": "income_inflation",
+    },
+
+    # ── Deceased Claims (elderly / deceased beneficiaries) ──
+    {
+        "id": "APP-036",
+        "declared": {"full_name": "Late Shri Ram Prasad", "dob": "1942-03-15", "gender": "male", "address": "Old Quarter 1, Varanasi, UP 221001", "aadhaar_masked": "XXXX-XXXX-3601", "pan_masked": "", "income_monthly": 3000.0, "bank_account_masked": "XXXXXXXXXX3601", "phone_masked": "XXXXXX3601", "scheme": "PM-KISAN", "state": "Uttar Pradesh", "district": "Varanasi"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Ram Prasad", "dob": "1942-03-15", "gender": "male", "address": "Old Quarter Varanasi"}},
+        ],
+        "expected_risk": "high", "expected_score": 60, "fraud_label": True, "fraud_type": "deceased",
+    },
+    {
+        "id": "APP-037",
+        "declared": {"full_name": "Late Smt Kamla Devi", "dob": "1938-09-20", "gender": "female", "address": "Ward 3, Mathura, UP 281001", "aadhaar_masked": "XXXX-XXXX-3701", "pan_masked": "", "income_monthly": 2500.0, "bank_account_masked": "XXXXXXXXXX3701", "phone_masked": "XXXXXX3701", "scheme": "Ujjwala Yojana", "state": "Uttar Pradesh", "district": "Mathura"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Kamla Devi", "dob": "1938-09-20", "gender": "female"}},
+        ],
+        "expected_risk": "high", "expected_score": 58, "fraud_label": True, "fraud_type": "deceased",
+    },
+    {
+        "id": "APP-038",
+        "declared": {"full_name": "Late Babu Lal Verma", "dob": "1945-12-10", "gender": "male", "address": "Purani Basti, Agra, UP 282001", "aadhaar_masked": "XXXX-XXXX-3801", "pan_masked": "", "income_monthly": 2800.0, "bank_account_masked": "XXXXXXXXXX3801", "phone_masked": "XXXXXX3801", "scheme": "MGNREGS", "state": "Uttar Pradesh", "district": "Agra"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Babu Lal", "dob": "1945-12-10", "gender": "male"}},
+        ],
+        "expected_risk": "high", "expected_score": 58, "fraud_label": True, "fraud_type": "deceased",
+    },
+
+    # ── Scheme Hoppers (same person, multiple schemes, inconsistent data) ──
+    {
+        "id": "APP-039",
+        "declared": {"full_name": "Ramesh Chandra Gupta", "dob": "1980-06-15", "gender": "male", "address": "55 Station Road, Kanpur, UP 208001", "aadhaar_masked": "XXXX-XXXX-3901", "pan_masked": "XXXXX3901X", "income_monthly": 7000.0, "bank_account_masked": "XXXXXXXXXX3901", "phone_masked": "XXXXXX3901", "scheme": "PM-KISAN", "state": "Uttar Pradesh", "district": "Kanpur"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Ramesh C Gupta", "dob": "1980-06-15", "gender": "male", "address": "55 Station Rd Kanpur"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Ramesh Chandra Gupta", "income_monthly": 7200.0}},
+        ],
+        "expected_risk": "medium", "expected_score": 40, "fraud_label": True, "fraud_type": "scheme_hopping",
+    },
+    {
+        "id": "APP-040",
+        "declared": {"full_name": "Ramesh Chandra Gupta", "dob": "1980-06-15", "gender": "male", "address": "55 Station Road, Kanpur, UP 208001", "aadhaar_masked": "XXXX-XXXX-3901", "pan_masked": "XXXXX3901X", "income_monthly": 4500.0, "bank_account_masked": "XXXXXXXXXX3901", "phone_masked": "XXXXXX3901", "scheme": "Ujjwala Yojana", "state": "Uttar Pradesh", "district": "Kanpur"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "R C Gupta", "dob": "1980-06-15", "gender": "male"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Ramesh Gupta", "income_monthly": 12000.0}},
+        ],
+        "expected_risk": "high", "expected_score": 55, "fraud_label": True, "fraud_type": "scheme_hopping",
+    },
+    {
+        "id": "APP-041",
+        "declared": {"full_name": "Ramesh Chandra Gupta", "dob": "1980-06-15", "gender": "male", "address": "112 Mall Road, Kanpur, UP 208004", "aadhaar_masked": "XXXX-XXXX-3901", "pan_masked": "XXXXX3901X", "income_monthly": 3200.0, "bank_account_masked": "XXXXXXXXXX3901", "phone_masked": "XXXXXX3901", "scheme": "MGNREGS", "state": "Uttar Pradesh", "district": "Kanpur"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Ramesh Chandra Gupta", "dob": "1981-06-15", "gender": "male", "address": "112 Mall Rd Kanpur"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Ramesh C Gupta", "income_monthly": 18000.0}},
+        ],
+        "expected_risk": "high", "expected_score": 58, "fraud_label": True, "fraud_type": "scheme_hopping",
+    },
+
+    # ── Address Cluster (3+ apps at same address) ──
+    {
+        "id": "APP-042",
+        "declared": {"full_name": "Amar Nath", "dob": "1985-03-22", "gender": "male", "address": "42 Cluster Colony, Sector 7, Gurugram, Haryana 122001", "aadhaar_masked": "XXXX-XXXX-4201", "pan_masked": "", "income_monthly": 6500.0, "bank_account_masked": "XXXXXXXXXX4201", "phone_masked": "XXXXXX4201", "scheme": "PM-KISAN", "state": "Haryana", "district": "Gurugram"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Amar Nath", "dob": "1985-03-22", "gender": "male", "address": "42 Cluster Colony Sec 7 Gurugram"}}],
+        "expected_risk": "high", "expected_score": 52, "fraud_label": True, "fraud_type": "address_cluster",
+    },
+    {
+        "id": "APP-043",
+        "declared": {"full_name": "Prem Lata", "dob": "1990-07-08", "gender": "female", "address": "42 Cluster Colony, Sector 7, Gurugram, Haryana 122001", "aadhaar_masked": "XXXX-XXXX-4301", "pan_masked": "", "income_monthly": 5800.0, "bank_account_masked": "XXXXXXXXXX4301", "phone_masked": "XXXXXX4301", "scheme": "Ujjwala Yojana", "state": "Haryana", "district": "Gurugram"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Prem Lata", "dob": "1990-07-08", "gender": "female", "address": "42 Cluster Colony Gurugram"}}],
+        "expected_risk": "high", "expected_score": 52, "fraud_label": True, "fraud_type": "address_cluster",
+    },
+    {
+        "id": "APP-044",
+        "declared": {"full_name": "Om Prakash", "dob": "1977-01-30", "gender": "male", "address": "42 Cluster Colony, Sector 7, Gurugram, Haryana 122001", "aadhaar_masked": "XXXX-XXXX-4401", "pan_masked": "", "income_monthly": 7200.0, "bank_account_masked": "XXXXXXXXXX4401", "phone_masked": "XXXXXX4401", "scheme": "MGNREGS", "state": "Haryana", "district": "Gurugram"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Om Prakash", "dob": "1977-01-30", "gender": "male", "address": "42 Cluster Colony Sector 7 Gurugram 122001"}}],
+        "expected_risk": "high", "expected_score": 52, "fraud_label": True, "fraud_type": "address_cluster",
+    },
+    {
+        "id": "APP-045",
+        "declared": {"full_name": "Savitri Devi", "dob": "1982-11-14", "gender": "female", "address": "42 Cluster Colony, Sector 7, Gurugram, Haryana 122001", "aadhaar_masked": "XXXX-XXXX-4501", "pan_masked": "", "income_monthly": 4900.0, "bank_account_masked": "XXXXXXXXXX4501", "phone_masked": "XXXXXX4501", "scheme": "PM-KISAN", "state": "Haryana", "district": "Gurugram"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Savitri Devi", "dob": "1982-11-14", "gender": "female", "address": "42 Cluster Colony Gurugram"}}],
+        "expected_risk": "high", "expected_score": 52, "fraud_label": True, "fraud_type": "address_cluster",
+    },
+    {
+        "id": "APP-046",
+        "declared": {"full_name": "Dharamveer Singh", "dob": "1988-05-05", "gender": "male", "address": "42 Cluster Colony, Sector 7, Gurugram, Haryana 122001", "aadhaar_masked": "XXXX-XXXX-4601", "pan_masked": "", "income_monthly": 6100.0, "bank_account_masked": "XXXXXXXXXX4601", "phone_masked": "XXXXXX4601", "scheme": "Ujjwala Yojana", "state": "Haryana", "district": "Gurugram"},
+        "documents": [{"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Dharamveer Singh", "dob": "1988-05-05", "gender": "male", "address": "42 Cluster Colony Sec 7 Gurugram"}}],
+        "expected_risk": "high", "expected_score": 52, "fraud_label": True, "fraud_type": "address_cluster",
+    },
+
+    # ── Additional Clean Applications ──
+    {
+        "id": "APP-047",
+        "declared": {"full_name": "Anita Kumari", "dob": "1994-08-18", "gender": "female", "address": "25 Gandhi Nagar, Ranchi, Jharkhand 834001", "aadhaar_masked": "XXXX-XXXX-4701", "pan_masked": "", "income_monthly": 5500.0, "bank_account_masked": "XXXXXXXXXX4701", "phone_masked": "XXXXXX4701", "scheme": "Ujjwala Yojana", "state": "Jharkhand", "district": "Ranchi"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Anita Kumari", "dob": "1994-08-18", "gender": "female", "address": "25 Gandhi Nagar Ranchi"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Anita Kumari", "income_monthly": 5700.0}},
+        ],
+        "expected_risk": "low", "expected_score": 5, "fraud_label": False, "fraud_type": "clean",
+    },
+    {
+        "id": "APP-048",
+        "declared": {"full_name": "Sunil Kumar Das", "dob": "1981-05-02", "gender": "male", "address": "77 Lake Town, Kolkata, WB 700089", "aadhaar_masked": "XXXX-XXXX-4801", "pan_masked": "", "income_monthly": 8200.0, "bank_account_masked": "XXXXXXXXXX4801", "phone_masked": "XXXXXX4801", "scheme": "PM-KISAN", "state": "West Bengal", "district": "Kolkata"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Sunil K Das", "dob": "1981-05-02", "gender": "male", "address": "77 Lake Town Kolkata"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Sunil Kumar Das", "income_monthly": 8500.0}},
+        ],
+        "expected_risk": "low", "expected_score": 7, "fraud_label": False, "fraud_type": "clean",
+    },
+    {
+        "id": "APP-049",
+        "declared": {"full_name": "Rekha Jain", "dob": "1973-10-12", "gender": "female", "address": "9 Malviya Nagar, Jaipur, Rajasthan 302017", "aadhaar_masked": "XXXX-XXXX-4901", "pan_masked": "", "income_monthly": 4200.0, "bank_account_masked": "XXXXXXXXXX4901", "phone_masked": "XXXXXX4901", "scheme": "Ujjwala Yojana", "state": "Rajasthan", "district": "Jaipur"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Rekha Jain", "dob": "1973-10-12", "gender": "female", "address": "9 Malviya Nagar Jaipur"}},
+        ],
+        "expected_risk": "low", "expected_score": 4, "fraud_label": False, "fraud_type": "clean",
+    },
+    {
+        "id": "APP-050",
+        "declared": {"full_name": "Dinesh Prasad Sahu", "dob": "1969-02-28", "gender": "male", "address": "18 Civil Station, Raipur, Chhattisgarh 492001", "aadhaar_masked": "XXXX-XXXX-5001", "pan_masked": "", "income_monthly": 6800.0, "bank_account_masked": "XXXXXXXXXX5001", "phone_masked": "XXXXXX5001", "scheme": "MGNREGS", "state": "Chhattisgarh", "district": "Raipur"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Dinesh P Sahu", "dob": "1969-02-28", "gender": "male", "address": "18 Civil Station Raipur"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Dinesh Prasad Sahu", "income_monthly": 7000.0}},
+        ],
+        "expected_risk": "low", "expected_score": 6, "fraud_label": False, "fraud_type": "clean",
+    },
+    {
+        "id": "APP-051",
+        "declared": {"full_name": "Kamla Bai Patil", "dob": "1987-06-30", "gender": "female", "address": "63 Tilak Road, Pune, Maharashtra 411030", "aadhaar_masked": "XXXX-XXXX-5101", "pan_masked": "", "income_monthly": 5100.0, "bank_account_masked": "XXXXXXXXXX5101", "phone_masked": "XXXXXX5101", "scheme": "Ujjwala Yojana", "state": "Maharashtra", "district": "Pune"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Kamla B Patil", "dob": "1987-06-30", "gender": "female", "address": "63 Tilak Rd Pune"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Kamla Bai Patil", "income_monthly": 5300.0}},
+        ],
+        "expected_risk": "low", "expected_score": 5, "fraud_label": False, "fraud_type": "clean",
+    },
+    {
+        "id": "APP-052",
+        "declared": {"full_name": "Jagdish Yadav", "dob": "1976-12-05", "gender": "male", "address": "31 Vikas Nagar, Dehradun, Uttarakhand 248001", "aadhaar_masked": "XXXX-XXXX-5201", "pan_masked": "", "income_monthly": 7500.0, "bank_account_masked": "XXXXXXXXXX5201", "phone_masked": "XXXXXX5201", "scheme": "PM-KISAN", "state": "Uttarakhand", "district": "Dehradun"},
+        "documents": [
+            {"type": "aadhaar", "source": "Aadhaar Card", "extracted": {"full_name": "Jagdish Yadav", "dob": "1976-12-05", "gender": "male", "address": "31 Vikas Nagar Dehradun"}},
+            {"type": "income_certificate", "source": "Income Certificate", "extracted": {"full_name": "Jagdish Yadav", "income_monthly": 7800.0}},
+        ],
+        "expected_risk": "low", "expected_score": 4, "fraud_label": False, "fraud_type": "clean",
+    },
 ]
+
+# ── Annotate legacy entries (APP-001…APP-020) with fraud_type ──
+_FRAUD_TYPE_MAP: dict[str, str] = {
+    "APP-001": "clean",
+    "APP-002": "clean",
+    "APP-003": "clean",
+    "APP-004": "clean",
+    "APP-005": "clean",
+    "APP-006": "clean",
+    "APP-007": "income_inflation",
+    "APP-008": "income_inflation",
+    "APP-009": "income_inflation",
+    "APP-010": "income_inflation",
+    "APP-011": "clean",
+    "APP-012": "clean",
+    "APP-013": "clean",
+    "APP-014": "clean",
+    "APP-015": "income_inflation",
+    "APP-016": "clean",
+    "APP-017": "clean",
+    "APP-018": "clean",
+    "APP-019": "clean",
+    "APP-020": "income_inflation",
+}
+for _app in SEED_APPLICATIONS:
+    _app.setdefault("fraud_type", _FRAUD_TYPE_MAP.get(_app["id"], "clean"))

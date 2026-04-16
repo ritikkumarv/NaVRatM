@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -229,7 +230,7 @@ async def process_application(app_id: str):
                 continue
             extracted_docs.append((source, fields))
 
-    profile = await run_pipeline(app_id, declared, extracted_docs)
+    profile = await run_pipeline(app_id, declared, extracted_docs, _APPS)
 
     # Persist profile data back into in-memory store
     app["risk_score"] = profile.risk_score
@@ -248,6 +249,69 @@ async def process_application(app_id: str):
     app["status"] = action_status.get(profile.recommended_action, ApplicationStatus.UNDER_REVIEW.value)
 
     return profile.model_dump()
+
+
+# ────────────────────── Process All ──────────────────────
+
+
+@router.post("/applications/process-all")
+async def process_all_applications():
+    """Process ALL applications through the fraud-detection pipeline."""
+    _ensure_seeded()
+    t0 = time.time()
+    total = 0
+    scores: list[int] = []
+    bands: dict[str, int] = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+
+    for app_id, app in list(_APPS.items()):
+        declared = DeclaredValues(**app["declared"])
+        extracted_docs: list[tuple[str, ExtractedFields]] = []
+        for doc in app.get("documents", []):
+            ext = doc.get("extracted")
+            if ext:
+                source = doc.get("source", doc.get("type", "unknown"))
+                try:
+                    fields = ExtractedFields(**ext)
+                except Exception:
+                    continue
+                extracted_docs.append((source, fields))
+
+        try:
+            profile = await run_pipeline(app_id, declared, extracted_docs, _APPS)
+            app["risk_score"] = profile.risk_score
+            band_val = (
+                profile.risk_band.value
+                if hasattr(profile.risk_band, "value")
+                else profile.risk_band
+            )
+            app["risk_band"] = band_val
+            app["risk_factors"] = [f.model_dump() for f in profile.factors]
+            app["anomalies"] = [a.model_dump() for a in profile.anomalies]
+            app["network_flags"] = [n.model_dump() for n in profile.network_flags]
+            app["updated_at"] = _now_iso()
+
+            action_status = {
+                "approve": ApplicationStatus.APPROVED.value,
+                "manual_review": ApplicationStatus.UNDER_REVIEW.value,
+                "escalate": ApplicationStatus.ESCALATED.value,
+            }
+            app["status"] = action_status.get(
+                profile.recommended_action, ApplicationStatus.UNDER_REVIEW.value
+            )
+
+            scores.append(profile.risk_score)
+            bands[band_val] = bands.get(band_val, 0) + 1
+            total += 1
+        except Exception as exc:
+            log.warning("Pipeline failed for %s: %s", app_id, exc)
+
+    elapsed = time.time() - t0
+    return {
+        "total_processed": total,
+        "avg_score": round(sum(scores) / max(len(scores), 1), 1),
+        "risk_band_distribution": bands,
+        "processing_time_seconds": round(elapsed, 2),
+    }
 
 
 # ────────────────────── Decide ──────────────────────

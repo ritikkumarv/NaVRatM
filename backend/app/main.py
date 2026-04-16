@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import applications, documents, health, voice
+from app.api.routes import applications, documents, health, metrics, voice
 from app.config import CORS_ORIGINS
 from app.models.database import init_db
 
@@ -31,7 +31,13 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origins=CORS_ORIGINS + [
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "null",  # file:// origin for local HTML
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,6 +48,7 @@ app.include_router(health.router)
 app.include_router(applications.router)
 app.include_router(documents.router)
 app.include_router(voice.router)
+app.include_router(metrics.router)
 
 
 @app.get("/")

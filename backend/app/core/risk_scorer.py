@@ -7,6 +7,7 @@ import logging
 
 from app.config import risk_band_for_score
 from app.models.schemas import (
+    AnomalyFinding,
     CanonicalRiskProfile,
     Discrepancy,
     NetworkFlag,
@@ -88,6 +89,8 @@ def calculate_risk(
     discrepancies: list[Discrepancy],
     connector_results: list | None = None,
     num_documents: int = 1,
+    anomalies: list[AnomalyFinding] | None = None,
+    network_flags_input: list[NetworkFlag] | None = None,
 ) -> CanonicalRiskProfile:
     """Compute risk score from discrepancies + connector signals.
 
@@ -213,7 +216,29 @@ def calculate_risk(
             source_ref=_evidence(sh),
         ))
 
-    # ── 4. Finalise ──────────────────────────────────────────────────
+    # ── 4. Anomaly score aggregation ────────────────────────────────
+    merged_anomalies: list[AnomalyFinding] = list(anomalies or [])
+    for a in merged_anomalies:
+        total += a.contributing_score
+
+    # ── 5. Network flag bonus ────────────────────────────────────────
+    _NETWORK_BONUS: dict[str, int] = {
+        "shared_bank_account": 15,
+        "address_cluster": 10,
+        "phone_ring": 10,
+        "income_ring": 10,
+    }
+    merged_network: list[NetworkFlag] = list(network_flags)
+    if network_flags_input:
+        existing_types = {nf.flag_type for nf in merged_network}
+        for nf in network_flags_input:
+            if nf.flag_type not in existing_types:
+                merged_network.append(nf)
+                existing_types.add(nf.flag_type)
+    for nf in merged_network:
+        total += _NETWORK_BONUS.get(nf.flag_type, 5)
+
+    # ── 6. Finalise ──────────────────────────────────────────────────
     score = min(total, 100)
     band = risk_band_for_score(score)
     factors.sort(key=lambda f: f.points, reverse=True)
@@ -223,8 +248,8 @@ def calculate_risk(
         risk_score=score,
         risk_band=RiskBand(band),
         factors=factors,
-        anomalies=[],           # Sprint 3 will populate
-        network_flags=network_flags,
+        anomalies=merged_anomalies,
+        network_flags=merged_network,
         recommended_action=_recommended_action(band),
         confidence=round(sum(f.confidence for f in factors) / max(len(factors), 1), 2),
     )

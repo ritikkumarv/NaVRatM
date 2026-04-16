@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NaVRatM — Beneficiary Intelligence Dashboard</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-card: #161b22;
+  --bg-card-hover: #1c2333;
+  --bg-input: #0d1117;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --border: #30363d;
+  --saffron: #FF9933;
+  --saffron-dim: #cc7a29;
+  --green: #138808;
+  --green-dim: #0f6a06;
+  --navy: #0d1b2a;
+  --danger: #f85149;
+  --warning: #d29922;
+  --success: #3fb950;
+  --info: #58a6ff;
+  --band-low: #3fb950;
+  --band-medium: #d29922;
+  --band-high: #f0883e;
+  --band-critical: #f85149;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.5; }
+
+/* Header */
+.header { background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 100%); border-bottom: 3px solid var(--saffron); padding: 1rem 2rem; display:flex; justify-content:space-between; align-items:center; }
+.header h1 { font-size:1.4rem; font-weight:700; }
+.header h1 .accent { color:var(--saffron); }
+.header h1 .sub { color:var(--text-secondary); font-size:0.85rem; font-weight:400; margin-left:0.5rem; }
+.header-actions { display:flex; gap:0.75rem; align-items:center; }
+.btn { padding:0.5rem 1rem; border:none; border-radius:6px; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:0.4rem; }
+.btn-primary { background:var(--saffron); color:#000; }
+.btn-primary:hover { background:var(--saffron-dim); }
+.btn-success { background:var(--green); color:#fff; }
+.btn-success:hover { background:var(--green-dim); }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-danger:hover { opacity:0.85; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text-primary); }
+.btn-outline:hover { border-color:var(--saffron); color:var(--saffron); }
+.btn-sm { padding:0.3rem 0.7rem; font-size:0.78rem; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* Stats */
+.stats-bar { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:1rem; padding:1.25rem 2rem; }
+.stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:1rem 1.25rem; text-align:center; }
+.stat-card .value { font-size:1.8rem; font-weight:700; color:var(--saffron); }
+.stat-card .label { font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-top:0.2rem; }
+.stat-card.flagged .value { color:var(--danger); }
+.stat-card.approved .value { color:var(--success); }
+
+/* Filter bar */
+.filter-bar { padding:0.75rem 2rem; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; border-bottom:1px solid var(--border); }
+.filter-bar select, .filter-bar input { background:var(--bg-input); border:1px solid var(--border); color:var(--text-primary); padding:0.4rem 0.7rem; border-radius:6px; font-size:0.82rem; }
+.filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:var(--saffron); }
+.filter-label { font-size:0.78rem; color:var(--text-secondary); }
+
+/* Table */
+.table-container { padding:0 2rem 2rem; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; margin-top:0.5rem; }
+thead th { background:var(--bg-card); border-bottom:2px solid var(--border); padding:0.65rem 0.8rem; text-align:left; font-size:0.78rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.04em; cursor:pointer; user-select:none; white-space:nowrap; }
+thead th:hover { color:var(--saffron); }
+thead th .sort-arrow { margin-left:0.3rem; font-size:0.65rem; }
+tbody tr { border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s; }
+tbody tr:hover { background:var(--bg-card-hover); }
+tbody tr.selected { background:#1a2744; border-left:3px solid var(--saffron); }
+td { padding:0.6rem 0.8rem; font-size:0.85rem; }
+
+/* Badges */
+.badge { display:inline-block; padding:0.15rem 0.55rem; border-radius:999px; font-size:0.72rem; font-weight:600; text-transform:uppercase; }
+.badge-low { background:rgba(63,185,80,0.15); color:var(--band-low); }
+.badge-medium { background:rgba(210,153,34,0.15); color:var(--band-medium); }
+.badge-high { background:rgba(240,136,62,0.15); color:var(--band-high); }
+.badge-critical { background:rgba(248,81,73,0.15); color:var(--band-critical); }
+.status-badge { padding:0.2rem 0.6rem; border-radius:4px; font-size:0.72rem; font-weight:600; text-transform:capitalize; }
+.status-pending { background:rgba(139,148,158,0.2); color:var(--text-secondary); }
+.status-under_review { background:rgba(88,166,255,0.15); color:var(--info); }
+.status-approved { background:rgba(63,185,80,0.15); color:var(--success); }
+.status-flagged { background:rgba(248,81,73,0.15); color:var(--danger); }
+.status-rejected { background:rgba(248,81,73,0.25); color:var(--danger); }
+.status-escalated { background:rgba(210,153,34,0.2); color:var(--warning); }
+
+/* Score bar */
+.score-bar { display:flex; align-items:center; gap:0.5rem; }
+.score-fill { height:6px; border-radius:3px; transition:width 0.3s; }
+.score-num { font-weight:700; font-size:0.85rem; min-width:2rem; }
+
+/* Detail panel */
+.detail-overlay { display:none; position:fixed; top:0; right:0; bottom:0; left:0; z-index:100; background:rgba(0,0,0,0.6); }
+.detail-overlay.active { display:flex; justify-content:flex-end; }
+.detail-panel { width:min(600px,90vw); height:100vh; background:var(--bg-card); border-left:1px solid var(--border); overflow-y:auto; padding:1.5rem; }
+.detail-panel h2 { font-size:1.15rem; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; }
+.detail-section { margin-bottom:1.25rem; }
+.detail-section h3 { font-size:0.85rem; color:var(--saffron); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.5rem; padding-bottom:0.3rem; border-bottom:1px solid var(--border); }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.4rem 1rem; }
+.detail-grid .field { font-size:0.78rem; }
+.detail-grid .field .lbl { color:var(--text-secondary); }
+.detail-grid .field .val { font-weight:600; }
+.detail-list { list-style:none; }
+.detail-list li { padding:0.4rem 0.6rem; margin-bottom:0.3rem; background:var(--bg-primary); border-radius:4px; font-size:0.8rem; border-left:3px solid var(--border); }
+.detail-list li.severity-high { border-left-color:var(--danger); }
+.detail-list li.severity-medium { border-left-color:var(--warning); }
+.detail-list li.severity-low { border-left-color:var(--success); }
+.explain-box { background:var(--bg-primary); border:1px solid var(--border); border-radius:6px; padding:1rem; font-size:0.85rem; line-height:1.6; min-height:60px; white-space:pre-wrap; }
+.decision-bar { display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); }
+.close-btn { background:none; border:none; color:var(--text-secondary); font-size:1.3rem; cursor:pointer; padding:0.2rem; }
+.close-btn:hover { color:var(--text-primary); }
+
+/* Heatmap */
+.heatmap-section { padding:0 2rem 2rem; }
+.heatmap-section h3 { font-size:0.9rem; color:var(--text-secondary); margin-bottom:0.75rem; }
+.heatmap { display:grid; grid-template-columns:repeat(auto-fill, 28px); gap:3px; }
+.heatmap-cell { width:28px; height:28px; border-radius:4px; position:relative; cursor:default; }
+.heatmap-cell:hover::after { content:attr(data-tip); position:absolute; bottom:110%; left:50%; transform:translateX(-50%); background:#000; color:#fff; padding:2px 6px; border-radius:3px; font-size:0.7rem; white-space:nowrap; z-index:10; }
+
+/* Loading */
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--saffron); border-radius:50%; animation:spin 0.6s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:200; }
+.loading-overlay .msg { background:var(--bg-card); padding:2rem 3rem; border-radius:8px; text-align:center; }
+.loading-overlay .msg .spinner { width:32px; height:32px; border-width:3px; margin-bottom:1rem; }
+
+/* Toast */
+.toast { position:fixed; bottom:1.5rem; right:1.5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:0.75rem 1.25rem; font-size:0.85rem; z-index:300; opacity:0; transform:translateY(20px); transition:all 0.3s; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast.success { border-color:var(--success); }
+.toast.error { border-color:var(--danger); }
+
+/* Refresh indicator */
+.auto-refresh { font-size:0.75rem; color:var(--text-secondary); display:flex; align-items:center; gap:0.4rem; }
+.auto-refresh .dot { width:6px; height:6px; border-radius:50%; background:var(--success); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>
+    <span class="accent">NaVRatM</span>
+    <span class="sub">Beneficiary Intelligence Dashboard</span>
+  </h1>
+  <div class="header-actions">
+    <div class="auto-refresh"><span class="dot"></span> Auto-refresh 30s</div>
+    <button class="btn btn-outline btn-sm" onclick="fetchAll()">&#8635; Refresh</button>
+    <button class="btn btn-primary" id="btnProcessAll" onclick="processAll()">&#9654; Process All</button>
+  </div>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat-card"><div class="value" id="statTotal">-</div><div class="label">Total Apps</div></div>
+  <div class="stat-card"><div class="value" id="statPending">-</div><div class="label">Pending</div></div>
+  <div class="stat-card flagged"><div class="value" id="statFlagged">-</div><div class="label">Flagged</div></div>
+  <div class="stat-card approved"><div class="value" id="statApproved">-</div><div class="label">Approved</div></div>
+  <div class="stat-card"><div class="value" id="statRejected">-</div><div class="label">Rejected</div></div>
+  <div class="stat-card"><div class="value" id="statEscalated">-</div><div class="label">Escalated</div></div>
+  <div class="stat-card"><div class="value" id="statAvgScore">-</div><div class="label">Avg Risk Score</div></div>
+  <div class="stat-card flagged"><div class="value" id="statHighRisk">-</div><div class="label">High Risk</div></div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <span class="filter-label">Filter:</span>
+  <select id="filterStatus" onchange="applyFilters()">
+    <option value="">All Statuses</option>
+    <option value="pending">Pending</option>
+    <option value="under_review">Under Review</option>
+    <option value="approved">Approved</option>
+    <option value="flagged">Flagged</option>
+    <option value="rejected">Rejected</option>
+    <option value="escalated">Escalated</option>
+  </select>
+  <select id="filterBand" onchange="applyFilters()">
+    <option value="">All Risk Bands</option>
+    <option value="low">Low</option>
+    <option value="medium">Medium</option>
+    <option value="high">High</option>
+    <option value="critical">Critical</option>
+  </select>
+  <select id="filterScheme" onchange="applyFilters()">
+    <option value="">All Schemes</option>
+    <option value="PM-KISAN">PM-KISAN</option>
+    <option value="Ujjwala Yojana">Ujjwala Yojana</option>
+    <option value="MGNREGS">MGNREGS</option>
+  </select>
+  <input type="search" id="filterSearch" placeholder="Search by name or ID..." oninput="applyFilters()" style="min-width:200px;">
+  <span style="margin-left:auto; font-size:0.78rem; color:var(--text-secondary);" id="resultCount"></span>
+</div>
+
+<!-- Application Table -->
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortBy('id')">ID <span class="sort-arrow" id="sort-id"></span></th>
+        <th onclick="sortBy('name')">Applicant Name <span class="sort-arrow" id="sort-name"></span></th>
+        <th onclick="sortBy('scheme')">Scheme <span class="sort-arrow" id="sort-scheme"></span></th>
+        <th onclick="sortBy('status')">Status <span class="sort-arrow" id="sort-status"></span></th>
+        <th onclick="sortBy('risk_score')">Risk Score <span class="sort-arrow" id="sort-risk_score"></span></th>
+        <th onclick="sortBy('risk_band')">Risk Band <span class="sort-arrow" id="sort-risk_band"></span></th>
+      </tr>
+    </thead>
+    <tbody id="appTable"></tbody>
+  </table>
+</div>
+
+<!-- Risk Heatmap -->
+<div class="heatmap-section">
+  <h3>Risk Score Distribution</h3>
+  <div class="heatmap" id="heatmap"></div>
+</div>
+
+<!-- Detail Panel Overlay -->
+<div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-panel" id="detailPanel"></div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display:none">
+  <div class="msg"><div class="spinner"></div><div id="loadingMsg">Processing...</div></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:8000/api';
+let allApps = [];
+let currentSort = { key: 'risk_score', dir: 'desc' };
+let selectedId = null;
+let refreshTimer = null;
+
+// ── Fetch helpers ──
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function showLoading(msg) { document.getElementById('loadingMsg').textContent = msg; document.getElementById('loadingOverlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+
+// ── Stats ──
+async function fetchStats() {
+  try {
+    const s = await api('/stats');
+    document.getElementById('statTotal').textContent = s.total_applications;
+    document.getElementById('statPending').textContent = s.pending;
+    document.getElementById('statFlagged').textContent = s.flagged;
+    document.getElementById('statApproved').textContent = s.approved;
+    document.getElementById('statRejected').textContent = s.rejected;
+    document.getElementById('statEscalated').textContent = s.escalated;
+    document.getElementById('statAvgScore').textContent = s.avg_risk_score.toFixed(1);
+    document.getElementById('statHighRisk').textContent = s.high_risk_count;
+  } catch (e) { console.error('Stats fetch failed', e); }
+}
+
+// ── Application list ──
+async function fetchApps() {
+  try {
+    const params = new URLSearchParams();
+    params.set('sort_by', currentSort.key === 'name' ? 'name' : 'risk_score');
+    params.set('sort_order', currentSort.dir);
+    allApps = await api('/applications?' + params.toString());
+    applyFilters();
+  } catch (e) { console.error('Apps fetch failed', e); }
+}
+
+function applyFilters() {
+  const status = document.getElementById('filterStatus').value;
+  const band = document.getElementById('filterBand').value;
+  const scheme = document.getElementById('filterScheme').value;
+  const search = document.getElementById('filterSearch').value.toLowerCase();
+
+  let filtered = allApps;
+  if (status) filtered = filtered.filter(a => a.status === status);
+  if (band) filtered = filtered.filter(a => a.risk_band === band);
+  if (scheme) filtered = filtered.filter(a => a.scheme === scheme);
+  if (search) filtered = filtered.filter(a =>
+    a.applicant_name.toLowerCase().includes(search) || a.id.toLowerCase().includes(search)
+  );
+
+  // Sort
+  filtered.sort((a, b) => {
+    let va = a[currentSort.key] ?? '', vb = b[currentSort.key] ?? '';
+    if (currentSort.key === 'name') { va = a.applicant_name; vb = b.applicant_name; }
+    if (typeof va === 'number' && typeof vb === 'number') return currentSort.dir === 'asc' ? va - vb : vb - va;
+    return currentSort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+
+  document.getElementById('resultCount').textContent = `${filtered.length} of ${allApps.length} applications`;
+  renderTable(filtered);
+  renderHeatmap(filtered);
+}
+
+function sortBy(key) {
+  if (currentSort.key === key) currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  else { currentSort.key = key; currentSort.dir = 'desc'; }
+  document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+  const arrow = document.getElementById('sort-' + key);
+  if (arrow) arrow.textContent = currentSort.dir === 'asc' ? '▲' : '▼';
+  applyFilters();
+}
+
+function scoreColor(s) {
+  if (s == null) return 'var(--text-secondary)';
+  if (s < 25) return 'var(--band-low)';
+  if (s < 50) return 'var(--band-medium)';
+  if (s < 75) return 'var(--band-high)';
+  return 'var(--band-critical)';
+}
+
+function renderTable(apps) {
+  const tbody = document.getElementById('appTable');
+  tbody.innerHTML = apps.map(a => `
+    <tr class="${a.id === selectedId ? 'selected' : ''}" onclick="openDetail('${a.id}')">
+      <td style="font-family:monospace; font-size:0.8rem;">${a.id}</td>
+      <td>${a.applicant_name}</td>
+      <td><span style="font-size:0.8rem;">${a.scheme}</span></td>
+      <td><span class="status-badge status-${a.status}">${a.status.replace('_',' ')}</span></td>
+      <td>
+        <div class="score-bar">
+          <span class="score-num" style="color:${scoreColor(a.risk_score)}">${a.risk_score ?? '—'}</span>
+          <div style="flex:1;background:var(--border);border-radius:3px;height:6px;">
+            <div class="score-fill" style="width:${a.risk_score ?? 0}%;background:${scoreColor(a.risk_score)};"></div>
+          </div>
+        </div>
+      </td>
+      <td>${a.risk_band ? `<span class="badge badge-${a.risk_band}">${a.risk_band}</span>` : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+function renderHeatmap(apps) {
+  const hm = document.getElementById('heatmap');
+  hm.innerHTML = apps.map(a => {
+    const s = a.risk_score ?? 0;
+    return `<div class="heatmap-cell" style="background:${scoreColor(s)}; opacity:${0.4 + (s/100)*0.6}" data-tip="${a.id}: ${s}"></div>`;
+  }).join('');
+}
+
+// ── Detail panel ──
+async function openDetail(id) {
+  selectedId = id;
+  applyFilters(); // re-render to highlight
+  try {
+    const app = await api('/applications/' + id);
+    renderDetail(app);
+    document.getElementById('detailOverlay').classList.add('active');
+  } catch (e) { showToast('Failed to load detail: ' + e.message, 'error'); }
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('active');
+  selectedId = null;
+  applyFilters();
+}
+
+function renderDetail(app) {
+  const p = app.risk_profile || {};
+  const factors = p.factors || [];
+  const anomalies = p.anomalies || [];
+  const nflags = p.network_flags || [];
+  const discs = app.discrepancies || [];
+
+  document.getElementById('detailPanel').innerHTML = `
+    <h2>
+      <span>${app.id} — ${app.declared.full_name}</span>
+      <button class="close-btn" onclick="closeDetail()">&times;</button>
+    </h2>
+
+    <div class="detail-section">
+      <h3>Status & Risk</h3>
+      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:0.5rem;">
+        <span class="status-badge status-${app.status}" style="font-size:0.85rem;">${app.status.replace('_',' ')}</span>
+        <span class="badge badge-${app.risk_band || 'low'}" style="font-size:0.85rem;">${app.risk_band || '—'}</span>
+        <span style="font-size:1.4rem;font-weight:700;color:${scoreColor(app.risk_score)}">${app.risk_score ?? '—'}<span style="font-size:0.7rem;color:var(--text-secondary)">/100</span></span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Declared Values</h3>
+      <div class="detail-grid">
+        ${Object.entries(app.declared).map(([k,v]) => `<div class="field"><span class="lbl">${k.replace(/_/g,' ')}:</span> <span class="val">${v || '—'}</span></div>`).join('')}
+      </div>
+    </div>
+
+    ${factors.length ? `<div class="detail-section">
+      <h3>Risk Factors (${factors.length})</h3>
+      <ul class="detail-list">
+        ${factors.map(f => `<li class="severity-${f.points > 10 ? 'high' : f.points > 5 ? 'medium' : 'low'}">
+          <strong>${f.factor_name}</strong> — ${f.points}/${f.max_points} pts<br>
+          <span style="color:var(--text-secondary);font-size:0.75rem;">${f.description}</span>
+        </li>`).join('')}
+      </ul>
+    </div>` : ''}
+
+    ${anomalies.length ? `<div class="detail-section">
+      <h3>Anomalies (${anomalies.length})</h3>
+      <ul class="detail-list">
+        ${anomalies.map(a => `<li class="severity-${a.severity || 'medium'}">
+          <strong>${a.anomaly_type}</strong> +${a.contributing_score || 0} pts<br>
+          <span style="color:var(--text-secondary);font-size:0.75rem;">${a.description}</span>
+        </li>`).join('')}
+      </ul>
+    </div>` : ''}
+
+    ${nflags.length ? `<div class="detail-section">
+      <h3>Network Flags (${nflags.length})</h3>
+      <ul class="detail-list">
+        ${nflags.map(n => `<li class="severity-high">
+          <strong>${n.flag_type}</strong> (confidence: ${(n.confidence*100).toFixed(0)}%)<br>
+          <span style="color:var(--text-secondary);font-size:0.75rem;">${n.description}</span>
+          ${n.linked_entity_ids?.length ? `<br><span style="font-size:0.72rem;color:var(--info);">Linked: ${n.linked_entity_ids.join(', ')}</span>` : ''}
+        </li>`).join('')}
+      </ul>
+    </div>` : ''}
+
+    ${discs.length ? `<div class="detail-section">
+      <h3>Discrepancies (${discs.length})</h3>
+      <ul class="detail-list">
+        ${discs.map(d => `<li class="severity-${d.severity}">
+          <strong>${d.field}</strong> — ${d.source_document}<br>
+          Declared: <em>${d.declared_value}</em> vs Extracted: <em>${d.extracted_value}</em>
+          <span style="font-size:0.72rem;color:var(--text-secondary);"> (match: ${(d.match_score*100).toFixed(0)}%)</span>
+        </li>`).join('')}
+      </ul>
+    </div>` : ''}
+
+    <div class="detail-section">
+      <h3>Explanation</h3>
+      <div class="explain-box" id="explainBox">${app.explanation || '<span style="color:var(--text-secondary)">Click "Explain" to generate an AI explanation.</span>'}</div>
+      <button class="btn btn-outline btn-sm" style="margin-top:0.5rem;" onclick="explainApp('${app.id}')">&#128172; Explain</button>
+    </div>
+
+    <div class="decision-bar">
+      <button class="btn btn-success btn-sm" onclick="decide('${app.id}','approve')">&#10003; Approve</button>
+      <button class="btn btn-outline btn-sm" style="border-color:var(--warning);color:var(--warning);" onclick="decide('${app.id}','flag')">&#9873; Flag</button>
+      <button class="btn btn-danger btn-sm" onclick="decide('${app.id}','reject')">&#10007; Reject</button>
+      <button class="btn btn-outline btn-sm" style="border-color:var(--info);color:var(--info);" onclick="decide('${app.id}','escalate')">&#8679; Escalate</button>
+    </div>
+  `;
+}
+
+// ── Actions ──
+async function processAll() {
+  const btn = document.getElementById('btnProcessAll');
+  btn.disabled = true;
+  showLoading('Processing all applications through the pipeline...');
+  try {
+    const result = await api('/applications/process-all', { method: 'POST' });
+    hideLoading();
+    showToast(`Processed ${result.total_processed} apps in ${result.processing_time_seconds}s (avg score: ${result.avg_score})`);
+    await fetchAll();
+  } catch (e) {
+    hideLoading();
+    showToast('Process-all failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function decide(id, action) {
+  try {
+    await api(`/applications/${id}/decide`, {
+      method: 'POST',
+      body: JSON.stringify({ action, reason: 'Officer decision via dashboard' }),
+    });
+    showToast(`${id}: ${action}d`);
+    await openDetail(id);
+    await fetchAll();
+  } catch (e) { showToast('Decision failed: ' + e.message, 'error'); }
+}
+
+async function explainApp(id) {
+  const box = document.getElementById('explainBox');
+  box.innerHTML = '<span class="spinner"></span> Generating explanation...';
+  try {
+    const res = await api(`/applications/${id}/explain`, {
+      method: 'POST',
+      body: JSON.stringify({ language: 'en-IN' }),
+    });
+    box.textContent = res.explanation;
+  } catch (e) {
+    box.textContent = 'Failed to generate explanation: ' + e.message;
+  }
+}
+
+// ── Master fetch ──
+async function fetchAll() {
+  await Promise.all([fetchStats(), fetchApps()]);
+}
+
+// ── Init ──
+fetchAll();
+// Auto-refresh every 30 seconds
+refreshTimer = setInterval(fetchAll, 30000);
+
+// Keyboard: Escape closes detail
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+// Set initial sort arrow
+document.getElementById('sort-risk_score').textContent = '▼';
+</script>
+</body>
+</html>

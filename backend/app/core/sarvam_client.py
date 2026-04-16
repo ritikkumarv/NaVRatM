@@ -20,11 +20,18 @@ from app.config import (
     SARVAM_STT_TRANSLATE_MODEL,
     SARVAM_TRANSLATE_MODEL,
     SARVAM_TTS_MODEL,
+    SSL_VERIFY,
 )
 
 log = logging.getLogger(__name__)
 
 _HEADERS: dict[str, str] = {"api-subscription-key": SARVAM_API_KEY}
+
+
+def _client(**kwargs) -> httpx.AsyncClient:
+    """Create an httpx async client with shared SSL and timeout settings."""
+    kwargs.setdefault("timeout", 30)
+    return httpx.AsyncClient(verify=SSL_VERIFY, **kwargs)
 
 
 # ────────────────────── translate ──────────────────────
@@ -44,7 +51,7 @@ async def translate_text(
         log.warning("No SARVAM_API_KEY — returning original text")
         return text
 
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with _client(timeout=30) as client:
         resp = await client.post(
             f"{SARVAM_BASE_URL}/translate",
             headers=_HEADERS,
@@ -76,7 +83,7 @@ async def chat(
         log.warning("No SARVAM_API_KEY — returning mock chat response")
         return '{"mock": true, "message": "No API key configured"}'
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with _client(timeout=60) as client:
         resp = await client.post(
             f"{SARVAM_BASE_URL}/v1/chat/completions",
             headers=_HEADERS,
@@ -111,7 +118,7 @@ async def transcribe(
             "language_probability": 0.95,
         }
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with _client(timeout=60) as client:
         data: dict[str, str] = {
             "model": model,
             "language_code": language_code,
@@ -147,7 +154,7 @@ async def transcribe_translate(
             "language_probability": 0.95,
         }
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with _client(timeout=60) as client:
         resp = await client.post(
             f"{SARVAM_BASE_URL}/speech-to-text-translate",
             headers=_HEADERS,
@@ -176,7 +183,7 @@ async def tts(
     if not SARVAM_API_KEY:
         return None
 
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with _client(timeout=30) as client:
         resp = await client.post(
             f"{SARVAM_BASE_URL}/text-to-speech",
             headers=_HEADERS,
