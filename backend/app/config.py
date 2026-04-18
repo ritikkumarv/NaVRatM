@@ -24,6 +24,10 @@ SARVAM_TRANSLATE_MODEL: str = "mayura:v1"        # text translate (11 langs)
 # Set SARVAM_SSL_VERIFY=false in .env if corporate proxy breaks certificate verification
 SSL_VERIFY: bool = os.getenv("SARVAM_SSL_VERIFY", "true").lower() not in ("false", "0", "no")
 
+# ── Corporate Proxy ──
+# Auto-detected: ep.threatpulse.net — set HTTPS_PROXY in .env
+HTTPS_PROXY: str = os.getenv("HTTPS_PROXY", "")
+
 # ── Database ──
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./navratm.db")
 

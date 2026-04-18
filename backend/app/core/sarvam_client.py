@@ -13,6 +13,7 @@ import logging
 import httpx
 
 from app.config import (
+    HTTPS_PROXY,
     SARVAM_API_KEY,
     SARVAM_BASE_URL,
     SARVAM_LLM_MODEL,
@@ -29,8 +30,10 @@ _HEADERS: dict[str, str] = {"api-subscription-key": SARVAM_API_KEY}
 
 
 def _client(**kwargs) -> httpx.AsyncClient:
-    """Create an httpx async client with shared SSL and timeout settings."""
+    """Create an httpx async client with shared SSL, proxy, and timeout settings."""
     kwargs.setdefault("timeout", 30)
+    if HTTPS_PROXY:
+        kwargs.setdefault("proxy", HTTPS_PROXY)
     return httpx.AsyncClient(verify=SSL_VERIFY, **kwargs)
 
 
@@ -51,19 +54,23 @@ async def translate_text(
         log.warning("No SARVAM_API_KEY — returning original text")
         return text
 
-    async with _client(timeout=30) as client:
-        resp = await client.post(
-            f"{SARVAM_BASE_URL}/translate",
-            headers=_HEADERS,
-            json={
-                "input": text,
-                "source_language_code": source_lang,
-                "target_language_code": target_lang,
-                "model": model,
-            },
-        )
-        resp.raise_for_status()
-        return resp.json().get("translated_text", text)
+    try:
+        async with _client(timeout=30) as client:
+            resp = await client.post(
+                f"{SARVAM_BASE_URL}/translate",
+                headers=_HEADERS,
+                json={
+                    "input": text,
+                    "source_language_code": source_lang,
+                    "target_language_code": target_lang,
+                    "model": model,
+                },
+            )
+            resp.raise_for_status()
+            return resp.json().get("translated_text", text)
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError) as exc:
+        log.warning("Sarvam translate failed, returning original: %s", exc)
+        return text
 
 
 # ────────────────────── chat completions ──────────────────────
@@ -83,19 +90,23 @@ async def chat(
         log.warning("No SARVAM_API_KEY — returning mock chat response")
         return '{"mock": true, "message": "No API key configured"}'
 
-    async with _client(timeout=60) as client:
-        resp = await client.post(
-            f"{SARVAM_BASE_URL}/v1/chat/completions",
-            headers=_HEADERS,
-            json={
-                "model": model,
-                "messages": messages,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            },
-        )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"]
+    try:
+        async with _client(timeout=60) as client:
+            resp = await client.post(
+                f"{SARVAM_BASE_URL}/v1/chat/completions",
+                headers=_HEADERS,
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"]
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError) as exc:
+        log.warning("Sarvam chat failed: %s", exc)
+        return "[AI Offline] Unable to reach Sarvam API. Please check your network connection."
 
 
 # ────────────────────── speech-to-text ──────────────────────
@@ -118,22 +129,30 @@ async def transcribe(
             "language_probability": 0.95,
         }
 
-    async with _client(timeout=60) as client:
-        data: dict[str, str] = {
-            "model": model,
-            "language_code": language_code,
+    try:
+        async with _client(timeout=60) as client:
+            data: dict[str, str] = {
+                "model": model,
+                "language_code": language_code,
+            }
+            # mode is only supported by saaras:v3
+            if model == "saaras:v3" and mode:
+                data["mode"] = mode
+            resp = await client.post(
+                f"{SARVAM_BASE_URL}/speech-to-text",
+                headers=_HEADERS,
+                files={"file": ("audio.wav", audio_bytes, "audio/wav")},
+                data=data,
+            )
+            resp.raise_for_status()
+            return resp.json()
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError) as exc:
+        log.warning("Sarvam STT failed: %s", exc)
+        return {
+            "transcript": "[STT Offline] Audio received but Sarvam API is unreachable",
+            "language_code": "en-IN",
+            "language_probability": 0.0,
         }
-        # mode is only supported by saaras:v3
-        if model == "saaras:v3" and mode:
-            data["mode"] = mode
-        resp = await client.post(
-            f"{SARVAM_BASE_URL}/speech-to-text",
-            headers=_HEADERS,
-            files={"file": ("audio.wav", audio_bytes, "audio/wav")},
-            data=data,
-        )
-        resp.raise_for_status()
-        return resp.json()
 
 
 # ────────────────────── speech-to-text-translate ──────────────────────
@@ -154,15 +173,23 @@ async def transcribe_translate(
             "language_probability": 0.95,
         }
 
-    async with _client(timeout=60) as client:
-        resp = await client.post(
-            f"{SARVAM_BASE_URL}/speech-to-text-translate",
-            headers=_HEADERS,
-            files={"file": ("audio.wav", audio_bytes, "audio/wav")},
-            data={"model": model},
-        )
-        resp.raise_for_status()
-        return resp.json()
+    try:
+        async with _client(timeout=60) as client:
+            resp = await client.post(
+                f"{SARVAM_BASE_URL}/speech-to-text-translate",
+                headers=_HEADERS,
+                files={"file": ("audio.wav", audio_bytes, "audio/wav")},
+                data={"model": model},
+            )
+            resp.raise_for_status()
+            return resp.json()
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError) as exc:
+        log.warning("Sarvam STT-translate failed: %s", exc)
+        return {
+            "transcript": "[STT-Translate Offline] Audio received but Sarvam API is unreachable",
+            "language_code": "en-IN",
+            "language_probability": 0.0,
+        }
 
 
 # ────────────────────── text-to-speech ──────────────────────
@@ -183,21 +210,25 @@ async def tts(
     if not SARVAM_API_KEY:
         return None
 
-    async with _client(timeout=30) as client:
-        resp = await client.post(
-            f"{SARVAM_BASE_URL}/text-to-speech",
-            headers=_HEADERS,
-            json={
-                "text": text,
-                "target_language_code": target_language_code,
-                "speaker": speaker,
-                "model": model,
-                "pace": pace,
-            },
-        )
-        resp.raise_for_status()
-        audios = resp.json().get("audios", [])
-        return audios[0] if audios else None
+    try:
+        async with _client(timeout=30) as client:
+            resp = await client.post(
+                f"{SARVAM_BASE_URL}/text-to-speech",
+                headers=_HEADERS,
+                json={
+                    "text": text,
+                    "target_language_code": target_language_code,
+                    "speaker": speaker,
+                    "model": model,
+                    "pace": pace,
+                },
+            )
+            resp.raise_for_status()
+            audios = resp.json().get("audios", [])
+            return audios[0] if audios else None
+    except (httpx.ConnectError, httpx.TimeoutException, httpx.HTTPStatusError) as exc:
+        log.warning("Sarvam TTS failed: %s", exc)
+        return None
 
 
 # ────────────────────── document field extraction (via chat + vision) ──────────────────────
